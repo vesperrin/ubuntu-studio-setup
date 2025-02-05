@@ -1,0 +1,113 @@
+autoinstall:
+  version: 1
+  refresh-installer:
+    update: true
+    channel: latest/edge
+  source:
+    id: ubuntustudio-desktop
+    search_drivers: true
+
+  identity:
+    hostname: 
+    realname: 
+    username: 
+    password: 
+  keyboard:
+    layout: us
+    variant: ""
+    toggle: null
+  locale: "en_US.UTF-8"
+  timezone: Europe/Paris
+
+  storage:
+    swap:
+      size: 0
+    config:
+      # OS disk
+      - type: disk
+        id: os-disk
+        ptable: gpt
+        match:
+          size: smallest
+        wipe: superblock
+        grub_device: true
+      - type: partition
+        id: boot-partition
+        device: os-disk
+        size: 2048M
+        flag: boot
+        grub_device: true
+      - type: partition
+        id: root-partition
+        device: os-disk
+        size: -1
+        flag: root
+      - type: format
+        id: boot-format
+        volume: boot-partition
+        fstype: ext4
+      - type: format
+        id: root-format
+        volume: root-partition
+        fstype: ext4
+      - type: mount
+        id: boot-mount
+        device: boot-format
+        path: /boot
+      - type: mount
+        id: root-mount
+        device: root-format
+        path: /
+      # Data disk
+      - type: disk
+        id: data-disk
+        ptable: gpt
+        match:
+          size: largest
+        wipe: superblock
+      - type: partition
+        id: data-partition
+        device: data-disk
+        size: -1
+        flag: data
+      - type: format
+        id: data-format
+        volume: data-partition
+        fstype: ext4
+      - type: mount
+        id: data-mount
+        device: data-format
+        path: /mnt/data
+
+  kernel:
+    flavor: lowlatency
+  drivers:
+    install: true
+  codecs:
+    install: true
+
+  updates: all
+  apt:
+    mirror-selection:
+      primary:
+        - country-mirror
+        - uri: "http://archive.ubuntu.com/ubuntu"
+    geoip: true
+  snaps:
+    - name: code
+      classic: true
+    - name: bitwarden
+      classic: false
+  packages:
+    - jq
+    - curl
+
+  interactive-sections:
+    - network
+  late-commands:
+    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-wine.sh | sudo bash -s --
+    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-wine-mono.sh | sudo bash -s --
+    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-studio-one.sh | sudo bash -s --
+    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-vcv-rack.sh | sudo bash -s --
+
+  shutdown: reboot
