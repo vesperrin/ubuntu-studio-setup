@@ -1,36 +1,28 @@
 #!/bin/bash
-# Wine & Wine Mono Installer for Ubuntu 24.10
+# Wine Installer for Ubuntu 24.10
 
 set -euo pipefail
 
+# Source common utilities
+source utils.sh
+
+WINE_KEY_URL="https://dl.winehq.org/wine-builds/winehq.key"
+WINE_REPO="deb [signed-by=/etc/apt/keyrings/winehq-archive.key] https://dl.winehq.org/wine-builds/ubuntu/ $(lsb_release -cs) main"
+
 main() {
     echo "🔧 Configuring system..."
-    dpkg --add-architecture i386
-    apt-get update -y
 
-    echo "🔗 Adding WineHQ repository..."
-    mkdir -pm755 /etc/apt/keyrings
-    curl -L "https://dl.winehq.org/wine-builds/winehq.key" \
-        -o /etc/apt/keyrings/winehq-archive.key
-    curl -L "https://dl.winehq.org/wine-builds/ubuntu/dists/$(lsb_release -cs)/winehq-$(lsb_release -cs).sources" \
-        -o /etc/apt/sources.list.d/winehq.sources
-
-    echo "🔄 Updating package lists..."
-    apt-get update -y
-
-    echo "🍷 Installing WineHQ stable..."
-    apt-get install -y --install-recommends winehq-staging
- 
-    echo "⚙️  Running initial Wine configuration..."
-    winecfg &>/dev/null &
+    # Enable 32-bit architecture
+    sudo dpkg --add-architecture i386
+    add_repository "${WINE_KEY_URL}" "${WINE_REPO}"
+    install_dependencies winehq-staging
+    configure_wine
 
     echo "✅ Installation complete!"
     echo -e "\nCheck versions:"
     echo "Wine: $(wine --version)"
-    echo "Mono: $(wine mono --version 2>/dev/null || echo 'Not found')"
 }
 
-# Only execute if not in source mode
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     main
 fi

@@ -1,64 +1,38 @@
 #!/bin/bash
-# Wine Mono Auto-Installer for Ubuntu 24.10
-set -euo pipefail
+source utils.sh
 
-WINE_MONO_REPO="https://api.github.com/repos/wine-mono/wine-mono/releases/latest"
+# Constants
+WINE_MONO_REPO="wine-mono/wine-mono"
+WINE_MONO_PACKAGE_PREFIX="-x86.msi"
 INSTALL_DIR="${HOME}/.wine/drive_c/wine-mono"
-TEMPDIR="$(mktemp -d)"
-
-cleanup() {
-    echo "🧹 Cleaning up temporary files..."
-    rm -rf "${TEMPDIR}"
-}
-trap cleanup EXIT
-
-get_latest_release() {
-    curl -sL "${WINE_MONO_REPO}" |
-        jq -r '.tag_name'
-}
-
-download_msi() {
-    local version="$1"
-    local msi_url="https://github.com/wine-mono/wine-mono/releases/download/${version}/${version}-x86.msi"
-
-    echo "⬇️ Downloading Wine Mono ${version}..."
-    if ! curl -sL "${msi_url}" -o "${TEMPDIR}/${version}-x86.msi"; then
-        echo "❌ Failed to download MSI package"
-        exit 1
-    fi
-}
 
 install_mono() {
     local msi_file="$1"
     echo "🔨 Installing ${msi_file##*/}..."
 
-    if ! wine msiexec /i "${msi_file}" /qn; then
-        echo "❌ Installation failed"
-        exit 1
-    fi
+    install_wine_component msi || die "Failed to install MSI support"
+    wine msiexec /i "${msi_file}" /qn || die "Installation failed"
 
-    echo "✅ Wine Mono installed to ${INSTALL_DIR}"
+    echo -e "${GREEN}✅ Wine Mono installed to ${INSTALL_DIR}${NC}"
 }
 
 main() {
-    echo "🔍 Checking latest Wine Mono release..."
-    echo "📦 Installing required dependencies..."
+    echo "🍷 Installing Wine Mono..."
 
-    local latest_version
-    latest_version="$(get_latest_release)"
+    setup_tempdir
+    install_dependencies winetricks
+    configure_wine
 
-    if [[ -z "${latest_version}" ]]; then
-        echo "❌ Failed to fetch release information"
-        exit 1
-    fi
+    local wine_mono_msi
+    wine_mono_msi="$(download_github_latest_package "${WINE_MONO_REPO}" "" "${WINE_MONO_PACKAGE_PREFIX}")"
 
-    download_msi "${latest_version}"
-    install_mono "${TEMPDIR}/${latest_version}-x86.msi"
+    install_mono "${wine_mono_msi}"
 
     echo -e "\n💡 Verify installation with:"
     echo "wine mono --version"
 }
 
+# Only execute if not in source mode
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     main
 fi

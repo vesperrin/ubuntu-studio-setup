@@ -101,13 +101,12 @@ autoinstall:
   packages:
     - jq
     - curl
+    # Audio
+    - lsp-plugins-clap
 
   interactive-sections:
     - network
   late-commands:
-    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-wine.sh | sudo bash -s --
-    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-wine-mono.sh | sudo bash -s --
-    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-studio-one.sh | sudo bash -s --
-    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install-vcv-rack.sh | sudo bash -s --
+    - curl -sSL https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts/install.sh | sudo bash -s --
 
   shutdown: reboot

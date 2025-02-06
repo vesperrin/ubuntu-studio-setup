@@ -1,0 +1,1 @@
+winetricks list-all
