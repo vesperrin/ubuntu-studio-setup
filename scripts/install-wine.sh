@@ -19,8 +19,8 @@ main() {
     apt-get update -y
 
     echo "🍷 Installing WineHQ stable..."
-    apt-get install -y --install-recommends winehq-stable
-
+    apt-get install -y --install-recommends winehq-staging
+ 
     echo "⚙️  Running initial Wine configuration..."
     winecfg &>/dev/null &
 
