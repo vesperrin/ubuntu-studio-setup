@@ -3,6 +3,12 @@
 
 set -euo pipefail
 
+# Constants
+WINE_PREFIX="${HOME}/.wine"
+VST2_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Steinberg/VstPlugins"
+VST3_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Common\ Files/VST3"
+CLAP_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Common\ Files/CLAP"
+
 source utils.sh
 source install-syncthing.sh
 source install-wine.sh
@@ -15,11 +21,11 @@ source install-cableguys-shaperbox.sh
 
 # install_syncthing
 
-install_wine
+# install_wine
 # install_wine_mono
 # install_yabridge
 
 # install_studio_one
 # install_vcv_rack
-# install_pulse
+install_pulse
 # install_cableguys_shaperbox

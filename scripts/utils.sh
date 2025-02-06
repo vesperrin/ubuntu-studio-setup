@@ -27,6 +27,18 @@ cleanup_tempdir() {
     fi
 }
 
+# System Information
+get_distro_codename() {
+    local codename
+    codename="$(lsb_release -cs 2>/dev/null)" || die "Failed to detect distribution codename"
+
+    if [[ -z "${codename}" ]]; then
+        die "Could not determine distribution codename"
+    fi
+
+    echo "${codename}"
+}
+
 # Github
 get_github_latest_release() {
     local repo="$1" # Format: "owner/repo"
@@ -74,19 +86,49 @@ install_dependencies() {
     sudo apt-get install -y "${deps[@]}" || die "Failed to install dependencies"
 }
 
-add_repository() {
+# Repository management
+add_repository_key() {
     local key_url="$1"
-    local repo_line="$2"
+    local key_name="${2:-$(basename "$key_url")}"
     local keyring_dir="/etc/apt/keyrings"
 
-    echo "🔑 Adding repository key..."
-    sudo mkdir -p "$keyring_dir"
-    sudo curl -fsSL "$key_url" -o "${keyring_dir}/$(basename "$key_url")" ||
-        die "Failed to download repository key"
+    echo "🔑 Adding repository key: ${key_name}"
 
-    echo "📦 Adding repository..."
-    echo "$repo_line" | sudo tee "/etc/apt/sources.list.d/$(basename "$key_url").list" >/dev/null
+    # Create temp file with correct permissions
+    local temp_key
+    temp_key="$(mktemp)"
+
+    # Download key with error handling
+    safe_download "${key_url}" "${temp_key}" || die "Failed to download repository key"
+
+    # Move to keyring directory with proper permissions
+    sudo mkdir -p "${keyring_dir}"
+    sudo mv "${temp_key}" "${keyring_dir}/${key_name}"
+    sudo chmod 644 "${keyring_dir}/${key_name}"
+
+    echo "✓ Key installed to: ${keyring_dir}/${key_name}"
+}
+
+add_repository() {
+    local repo_line="$1"
+    local list_name="${2:-$(echo "$repo_line" | awk '{print $1}').list}"
+
+    echo "📦 Adding repository: ${list_name}"
+    echo "${repo_line}" | sudo tee "/etc/apt/sources.list.d/${list_name}" >/dev/null
     sudo apt-get update -y
+}
+
+add_apt_repository() {
+    local key_url="$1"
+    local repo_components="$2"
+    local service_name="$3"
+    
+    local key_name="${service_name}-archive-keyring.gpg"
+    local repo_line="deb [signed-by=/etc/apt/keyrings/${key_name}] ${repo_components}"
+
+    # Add repository key and source
+    add_repository_key "${key_url}" "${key_name}"
+    add_repository "${repo_line}" "${service_name}.list"
 }
 
 # File management
@@ -126,8 +168,14 @@ configure_service() {
 # Path management
 add_to_path() {
     local path_dir="$1"
+    local line="export PATH=\"\$PATH:$path_dir\""
     echo "🔗 Adding to PATH: $path_dir"
-    echo "export PATH=\"\$PATH:$path_dir\"" >>"${HOME}/.bashrc"
+
+    # Append the line to .bashrc only if it's not already there
+    if ! grep -Fxq "$line" "${HOME}/.bashrc"; then
+        echo "$line" >> "${HOME}/.bashrc"
+    fi
+
     export PATH="$PATH:$path_dir"
 }
 

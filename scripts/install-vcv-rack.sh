@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Constants
-RACK_URL="https://vcvrack.com/RackProDownload?version=2.5.2&arch=lin-x64"
-INSTALL_DIR="/opt/VCVRack"
-DESKTOP_ENTRY="/usr/share/applications/vcv-rack.desktop"
+VCV_RACK_URL="https://vcvrack.com/RackProDownload?version=2.5.2&arch=lin-x64"
+VCV_RACK_INSTALL_DIR="/opt/VCVRack"
+VCV_RACK_DESKTOP_ENTRY="/usr/share/applications/vcv-rack.desktop"
 
 install_vcv_rack() {
     echo "🎹 Installing VCV Rack Pro..."
@@ -16,27 +16,27 @@ install_vcv_rack() {
 
     # Download VCV Rack
     local rack_zip="${TEMPDIR}/vcv-rack.zip"
-    safe_download "${RACK_URL}" "${rack_zip}"
+    safe_download "${VCV_RACK_URL}" "${rack_zip}"
 
     # Install to system directory
     echo "📂 Extracting files..."
-    sudo mkdir -p "${INSTALL_DIR}"
-    sudo unzip -q "${rack_zip}" -d "${INSTALL_DIR}"
-    sudo chmod +x "${INSTALL_DIR}/Rack"
+    sudo mkdir -p "${VCV_RACK_INSTALL_DIR}"
+    sudo unzip -q "${rack_zip}" -d "${VCV_RACK_INSTALL_DIR}"
+    sudo chmod +x "${VCV_RACK_INSTALL_DIR}/Rack"
 
     create_desktop_entry \
-        "${DESKTOP_ENTRY}" \
-        "${INSTALL_DIR}/Rack" \
-        "${INSTALL_DIR}/Rack.svg" \
+        "${VCV_RACK_DESKTOP_ENTRY}" \
+        "${VCV_RACK_INSTALL_DIR}/Rack" \
+        "${VCV_RACK_INSTALL_DIR}/Rack.svg" \
         "VCV Rack Pro"
 
     # Create symlink for terminal access
     echo "🔗 Creating command line access..."
-    sudo ln -sf "${INSTALL_DIR}/Rack" /usr/local/bin/rack
+    sudo ln -sf "${VCV_RACK_INSTALL_DIR}/Rack" /usr/local/bin/rack
 
     # Post-install configuration
     echo "⚙️ Finalizing installation..."
-    sudo chown -R root:root "${INSTALL_DIR}"
+    sudo chown -R root:root "${VCV_RACK_INSTALL_DIR}"
     sudo ldconfig
 
     echo -e "${GREEN}✅ VCV Rack Pro installation complete!${NC}"
