@@ -1,10 +1,9 @@
 #!/bin/bash
-source utils.sh
 
 SYNCTHING_KEY_URL="https://syncthing.net/release-key.gpg"
 SYNCTHING_REPO="deb [signed-by=/etc/apt/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable"
 
-main() {
+install_syncthing() {
     add_repository "$SYNCTHING_KEY_URL" "$SYNCTHING_REPO"
     install_dependencies syncthing
     configure_service "syncthing@${USER}.service"
@@ -17,7 +16,3 @@ main() {
 
     echo -e "${GREEN}✅ Syncthing installation complete!${NC}"
 }
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

@@ -3,19 +3,23 @@
 
 set -euo pipefail
 
-# Constants
-REMOTE_PATH=https://raw.githubusercontent.com/vesperrin/ubuntu-studio-setup/refs/heads/main/scripts
+source utils.sh
+source install-syncthing.sh
+source install-wine.sh
+source install-wine-mono.sh
+source install-yabridge.sh
+source install-studio-one.sh
+source install-vcv-rack.sh
+source install-pulse.sh
+source install-cableguys-shaperbox.sh
 
-# shellcheck disable=SC1090
-source <(curl -fsSL "${REMOTE_PATH}/install.sh")
+# install_syncthing
 
-# curl -sSL "${REMOTE_PATH}/install-syncthing.sh" | sudo bash -s --
+install_wine
+# install_wine_mono
+# install_yabridge
 
-curl -sSL "${REMOTE_PATH}/install-wine.sh" | sudo bash -s --
-# curl -sSL "${REMOTE_PATH}/install-wine-mono.sh" | sudo bash -s --
-# curl -sSL "${REMOTE_PATH}/install-yabridge.sh" | sudo bash -s --
-
-# curl -sSL "${REMOTE_PATH}/install-studio-one.sh" | sudo bash -s --
-# curl -sSL "${REMOTE_PATH}/install-vcv-rack.sh" | sudo bash -s --
-# curl -sSL "${REMOTE_PATH}/install-pulse.sh" | sudo bash -s --
-# curl -sSL "${REMOTE_PATH}/install-cableguys-shaperbox.sh" | sudo bash -s --
+# install_studio_one
+# install_vcv_rack
+# install_pulse
+# install_cableguys_shaperbox

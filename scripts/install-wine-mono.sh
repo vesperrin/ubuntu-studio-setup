@@ -1,5 +1,4 @@
 #!/bin/bash
-source utils.sh
 
 # Constants
 WINE_MONO_REPO="wine-mono/wine-mono"
@@ -16,7 +15,7 @@ install_mono() {
     echo -e "${GREEN}✅ Wine Mono installed to ${INSTALL_DIR}${NC}"
 }
 
-main() {
+install_wine_mono() {
     echo "🍷 Installing Wine Mono..."
 
     setup_tempdir
@@ -31,8 +30,3 @@ main() {
     echo -e "\n💡 Verify installation with:"
     echo "wine mono --version"
 }
-
-# Only execute if not in source mode
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

@@ -11,7 +11,7 @@ TEMP_ZIP="${TEMPDIR}/polyverse-manipulator.zip"
 INSTALL_DIR="${HOME}/.wine/drive_c/Program Files/Polyverse/Manipulator"
 PLUGIN_DIR="${HOME}/.wine/drive_c/Program Files/Steinberg/VstPlugins"
 
-main() {
+install_polyverse_manipulator() {
     echo "🎛️  Starting Polyverse Manipulator installation..."
 
     # Create installation directory
@@ -46,7 +46,3 @@ main() {
     echo -e "\nManipulator installed to: ${PLUGIN_DIR}"
     echo "Launch your DAW and scan for new plugins"
 }
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

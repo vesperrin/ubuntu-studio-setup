@@ -1,13 +1,12 @@
 #!/bin/bash
-source utils.sh
 
 # Constants
 RACK_URL="https://vcvrack.com/RackProDownload?version=2.5.2&arch=lin-x64"
 INSTALL_DIR="/opt/VCVRack"
 DESKTOP_ENTRY="/usr/share/applications/vcv-rack.desktop"
 
-main() {
-    echo "🎹 Installing VCV Rack Pro 2.5.2..."
+install_vcv_rack() {
+    echo "🎹 Installing VCV Rack Pro..."
 
     setup_tempdir
     configure_audio
@@ -42,8 +41,3 @@ main() {
 
     echo -e "${GREEN}✅ VCV Rack Pro installation complete!${NC}"
 }
-
-# Only execute if not in source mode
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

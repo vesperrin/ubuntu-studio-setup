@@ -9,15 +9,8 @@ VST2_DIR="${WINE_PREFIX}/drive_c/Program Files/Steinberg/VstPlugins"
 VST3_DIR="${WINE_PREFIX}/drive_c/Program Files/Common Files/VST3"
 CLAP_DIR="${WINE_PREFIX}/drive_c/Program Files/Common Files/CLAP"
 
-cleanup() {
-    echo "🧹 Cleaning up temporary files..."
-    rm -rf "${TEMPDIR}"
-}
-trap cleanup EXIT
-
-install_yabridge() {
+install_yabridge_package() {
     echo "⬇️ Downloading yabridge..."
-    TEMPDIR="$(mktemp -d)"
     curl -L "${YABRIDGE_URL}" -o "${TEMPDIR}/yabridge.tar.gz"
 
     echo "📂 Extracting yabridge..."
@@ -46,17 +39,7 @@ configure_yabridge() {
     echo "✅ yabridge configured!"
 }
 
-main() {
-    # Install Wine Staging
-    install_wine_staging
-
-    # Install yabridge
-    install_yabridge
-
-    # Configure yabridge
+install_yabridge() {
+    install_yabridge_package
     configure_yabridge
 }
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

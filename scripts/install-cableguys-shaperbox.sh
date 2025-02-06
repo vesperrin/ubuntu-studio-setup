@@ -3,15 +3,12 @@
 
 set -euo pipefail
 
-# Source common utilities
-source utils.sh
-
 # Constants
 DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=1OFlYWvuaJtVz_NHyJEZ1jDQGDXB3Du_D&export=download&authuser=0&confirm=t&uuid=78500e2a-3920-4de8-a8e5-572507567f52&at=AIrpjvMawb76bXU2s-bml9-9Evw1%3A1738857456359"
 INSTALL_DIR="${HOME}/.wine/drive_c/Program Files/Cableguys/ShaperBox"
 PLUGIN_DIR="${HOME}/.wine/drive_c/Program Files/Steinberg/VstPlugins"
 
-main() {
+install_cableguys_shaperbox() {
     echo "🎛️  Starting Cableguys ShaperBox installation..."
 
     echo "📂 Creating installation directory..."
@@ -40,7 +37,3 @@ main() {
     echo -e "\nShaperBox installed to: ${PLUGIN_DIR}"
     echo "Launch your DAW and scan for new plugins"
 }
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi

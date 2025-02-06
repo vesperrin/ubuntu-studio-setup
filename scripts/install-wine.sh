@@ -3,13 +3,10 @@
 
 set -euo pipefail
 
-# Source common utilities
-source utils.sh
-
 WINE_KEY_URL="https://dl.winehq.org/wine-builds/winehq.key"
 WINE_REPO="deb [signed-by=/etc/apt/keyrings/winehq-archive.key] https://dl.winehq.org/wine-builds/ubuntu/ $(lsb_release -cs) main"
 
-main() {
+install_wine() {
     echo "🔧 Configuring system..."
 
     # Enable 32-bit architecture
@@ -22,7 +19,3 @@ main() {
     echo -e "\nCheck versions:"
     echo "Wine: $(wine --version)"
 }
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main
-fi
