@@ -6,25 +6,24 @@ set -euo pipefail
 # Colors and formatting
 export NC='\033[0m' RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[0;33m'
 
+log_install() {
+    local app_name=""
+    app_name="$1"
+
+    echo "🎛 Installing ${app_name}..."
+}
+
+log_install_complete() {
+    local app_name=""
+    app_name="$1"
+
+    echo -e "${GREEN}✅ ${app_name} installation complete!${NC}"
+}
+
 # Error handling
 die() {
     echo -e "${RED}Error: $*${NC}" >&2
     exit 1
-}
-
-# Temporary directory management
-setup_tempdir() {
-    declare -g TEMPDIR
-    TEMPDIR="$(mktemp -d)"
-    trap "cleanup_tempdir '${TEMPDIR}'" EXIT
-}
-
-cleanup_tempdir() {
-    local dir="${1:-}"
-    if [[ -n "$dir" && -d "$dir" ]]; then
-        echo "🧹 Cleaning up temporary files..."
-        rm -rf "$dir"
-    fi
 }
 
 # System Information
@@ -32,86 +31,183 @@ get_distro_codename() {
     local codename
     codename="$(lsb_release -cs 2>/dev/null)" || die "Failed to detect distribution codename"
 
-    if [[ -z "${codename}" ]]; then
-        die "Could not determine distribution codename"
-    fi
+    [[ -z "${codename}" ]] && die "Could not determine distribution codename"
 
     echo "${codename}"
 }
 
 # Github
 get_github_latest_release() {
-    local repo="$1" # Format: "owner/repo"
-    local api_url="https://api.github.com/repos/${repo}/releases/latest"
+    local org="" repo=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --org)
+            org="$2"
+            shift 2
+            ;;
+        --repo)
+            repo="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$org" ]] && die "Missing required parameter: --org"
+    [[ -z "$repo" ]] && die "Missing required parameter: --repo"
 
-    # Ensure jq is installed
+    local api_url="https://api.github.com/repos/${org}/${repo}/releases/latest"
     if ! command -v jq >/dev/null; then
         install_dependencies jq
     fi
 
-    # Fetch and return the latest release tag
     curl -sL "${api_url}" | jq -r '.tag_name' || die "Failed to fetch release information"
 }
 
 download_github_package() {
-    local repo="$1" # Format: "owner/repo"
-    local version="$2"
-    local prefix="$3"
-    local suffix="$4"
+    local org="" repo="" version="" prefix="" suffix=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --org)
+            org="$2"
+            shift 2
+            ;;
+        --repo)
+            repo="$2"
+            shift 2
+            ;;
+        --version)
+            version="$2"
+            shift 2
+            ;;
+        --prefix)
+            prefix="$2"
+            shift 2
+            ;;
+        --suffix)
+            suffix="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$org" ]] && die "Missing required parameter: --org"
+    [[ -z "$repo" ]] && die "Missing required parameter: --repo"
+    [[ -z "$version" ]] && die "Missing required parameter: --version"
+    [[ -z "$prefix" ]] && die "Missing required parameter: --prefix"
+    [[ -z "$suffix" ]] && die "Missing required parameter: --suffix"
 
     local destination="${TEMPDIR}/${prefix}${version}${suffix}"
-    local source="https://github.com/${repo}/releases/download/${version}/${prefix}${version}${suffix}"
+    local source="https://github.com/${org}/${repo}/releases/download/${version}/${prefix}${version}${suffix}"
 
-    echo "⬇️ Downloading ${repo} ${version}..."
-    safe_download "${source}" "${destination}"
+    safe_download --url "${source}" --dest "${destination}"
+
     echo "${destination}"
 }
 
 download_github_latest_package() {
-    local repo="$1" # Format: "owner/repo"
-    local prefix="$3"
-    local suffix="$4"
+    local org="" repo="" prefix="" suffix=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --org)
+            org="$2"
+            shift 2
+            ;;
+        --repo)
+            repo="$2"
+            shift 2
+            ;;
+        --prefix)
+            prefix="$2"
+            shift 2
+            ;;
+        --suffix)
+            suffix="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$org" ]] && die "Missing required parameter: --org"
+    [[ -z "$repo" ]] && die "Missing required parameter: --repo"
+    [[ -z "$prefix" ]] && die "Missing required parameter: --prefix"
+    [[ -z "$suffix" ]] && die "Missing required parameter: --suffix"
 
     local version
-    version="$(get_github_latest_release "${repo}")"
-
-    download_github_package "${repo}" "${version}" "${prefix}" "${suffix}"
+    version="$(get_github_latest_release --org "${org}" --repo "${repo}")"
+    download_github_package \
+        --org "${org}" \
+        --repo "${repo}" \
+        --version "${version}" \
+        --prefix "${prefix}" \
+        --suffix "${suffix}"
 }
 
 # Package management
 install_dependencies() {
-    local deps=("$@")
-    echo "📦 Installing dependencies: ${deps[*]}..."
+    local packages=("$@")
+    [[ ${#packages[@]} -eq 0 ]] && die "No packages specified"
+
+    echo "📦 Installing dependencies: ${packages[*]}..."
     sudo apt-get update -y
-    sudo apt-get install -y "${deps[@]}" || die "Failed to install dependencies"
+    sudo apt-get install -y "${packages[@]}" || die "Failed to install dependencies"
 }
 
 # Repository management
 add_repository_key() {
-    local key_url="$1"
-    local key_name="${2:-$(basename "$key_url")}"
-    local keyring_dir="/etc/apt/keyrings"
+    local key_url="" key_name="" keyring_dir="/etc/apt/keyrings"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --key-url)
+            key_url="$2"
+            shift 2
+            ;;
+        --key-name)
+            key_name="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$key_url" ]] && die "Missing required parameter: --key-url"
+    [[ -z "$key_name" ]] && key_name="$(basename "$key_url")"
 
-    echo "🔑 Adding repository key: ${key_name}"
-
-    # Create temp file with correct permissions
     local temp_key
     temp_key="$(mktemp)"
+    safe_download --url "${key_url}" --dest "${temp_key}" || die "Failed to download repository key"
 
-    # Download key with error handling
-    safe_download "${key_url}" "${temp_key}" || die "Failed to download repository key"
-
-    # Move to keyring directory with proper permissions
     sudo mkdir -p "${keyring_dir}"
-    sudo mv "${temp_key}" "${keyring_dir}/${key_name}"
+    sudo cp "${temp_key}" "${keyring_dir}/${key_name}"
     sudo chmod 644 "${keyring_dir}/${key_name}"
-
     echo "✓ Key installed to: ${keyring_dir}/${key_name}"
 }
 
 add_repository() {
-    local repo_line="$1"
-    local list_name="${2:-$(echo "$repo_line" | awk '{print $1}').list}"
+    local repo_line="" list_name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --repo-line)
+            repo_line="$2"
+            shift 2
+            ;;
+        --list-name)
+            list_name="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$repo_line" ]] && die "Missing required parameter: --repo-line"
+    [[ -z "$list_name" ]] && list_name="$(echo "$repo_line" | awk '{print $1}').list"
 
     echo "📦 Adding repository: ${list_name}"
     echo "${repo_line}" | sudo tee "/etc/apt/sources.list.d/${list_name}" >/dev/null
@@ -119,47 +215,201 @@ add_repository() {
 }
 
 add_apt_repository() {
-    local key_url="$1"
-    local repo_components="$2"
-    local service_name="$3"
-    
+    local key_url="" repo_components="" service_name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --key-url)
+            key_url="$2"
+            shift 2
+            ;;
+        --repo-components)
+            repo_components="$2"
+            shift 2
+            ;;
+        --service-name)
+            service_name="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$key_url" ]] && die "Missing required parameter: --key-url"
+    [[ -z "$repo_components" ]] && die "Missing required parameter: --repo-components"
+    [[ -z "$service_name" ]] && die "Missing required parameter: --service-name"
+
     local key_name="${service_name}-archive-keyring.gpg"
     local repo_line="deb [signed-by=/etc/apt/keyrings/${key_name}] ${repo_components}"
-
-    # Add repository key and source
-    add_repository_key "${key_url}" "${key_name}"
-    add_repository "${repo_line}" "${service_name}.list"
+    add_repository_key --key-url "${key_url}" --key-name "${key_name}"
+    add_repository --repo-line "${repo_line}" --list-name "${service_name}.list"
 }
 
 # File management
 safe_download() {
-    local url="$1"
-    local dest="$2"
+    local url="" dest=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --url)
+            url="$2"
+            shift 2
+            ;;
+        --dest)
+            dest="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$url" ]] && die "Missing required parameter: --url"
+    [[ -z "$dest" ]] && die "Missing required parameter: --dest"
+
     echo "⬇️ Downloading $(basename "$dest")..."
-    curl -fsSL "$url" -o "$dest" || die "Failed to download $url"
+    wget --max-redirect=2 -q -O "$dest" "$url" || die "Failed to download $url"
 }
 
 install_deb() {
-    local deb_path="$1"
+    local deb_path
+    deb_path="$1"
+
     echo "🔨 Installing DEB package..."
     sudo apt-get install -y "$deb_path" || die "Failed to install DEB package"
 }
 
-# Wine specific utilities
+setup_temp_dir() {
+    local temp_dir=""
+    temp_dir="$1"
+
+    echo "📂 Setup Temp directory..."
+    rm -rf "${temp_dir}"
+    mkdir -p "${temp_dir}"
+}
+
+create_install_dir() {
+    local dir=""
+    dir="$1"
+
+    echo "📂 Creating installation directory..."
+    mkdir -p "${dir}"
+}
+
+# Wine
 configure_wine() {
     echo "🍷 Configuring Wine..."
     winecfg &>/dev/null &
 }
 
-install_wine_component() {
-    local component="$1"
-    echo "🔧 Installing Wine component: $component..."
-    winetricks -q "$component" || die "Failed to install $component"
+install_wine_components() {
+    local components=("$@")
+    [[ ${#components[@]} -eq 0 ]] && die "No components specified"
+
+    echo "🔧 Installing Wine components: ${components[*]}..."
+    winetricks -q "${components[@]}" || die "Failed to install components: ${components[*]}"
+}
+
+wine_install() {
+    local installer="" debug=false
+    local options=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --installer)
+                installer="$2"
+                shift 2
+                ;;
+            --options)
+                # Allow multiple space-separated options
+                IFS=' ' read -ra opts <<< "$2"
+                options+=("${opts[@]}")
+                shift 2
+                ;;
+            --debug)
+                debug=true
+                shift 2
+                ;;
+            *)
+                die "Unknown option: $1"
+                ;;
+        esac
+    done
+
+    [[ -z "$installer" ]] && die "Missing required parameter: --installer"
+    [[ ${#options[@]} -eq 0 ]] && options=("/S")
+
+    if [[ "$debug" == true ]]; then
+        export WINEDEBUG="+loaddll,+module"
+    fi
+
+    echo "🔨 Installing $(basename "$installer")..."
+    wine "${installer}" "${options[@]}" || die "Failed to install $(basename "$installer") with options: ${options[*]}"
+}
+
+wine_download_and_install() {
+    local source="" dest="" installer="" debug=false
+    local options=()
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --source)
+                source="$2"
+                shift 2
+                ;;
+            --dest)
+                dest="$2"
+                shift 2
+                ;;
+            --installer)
+                installer="$2"
+                shift 2
+                ;;
+            --options)
+                IFS=' ' read -ra opts <<< "$2"
+                options+=("${opts[@]}")
+                shift 2
+                ;;
+            --debug)
+                debug=true
+                shift
+                ;;
+            *)
+                die "Unknown option: $1"
+                ;;
+        esac
+    done
+    
+    [[ -z "$source" ]] && die "Missing required parameter: --source"
+    [[ -z "$dest" ]] && die "Missing required parameter: --dest"
+
+    safe_download --url "${source}" --dest "${dest}"
+    local dest_dir
+    dest_dir="$(dirname "$dest")"
+
+    if [[ -z "$installer" ]]; then
+        installer="$(basename "$dest")"
+    else
+        local zip_basename
+        zip_basename="$(basename "$dest" .zip)"
+        local unzipped_dir="${zip_basename}-unzipped"
+        unzip -q "${dest}" -d "${dest_dir}/${unzipped_dir}" || die "Failed to unzip ${dest}"
+        dest_dir="${dest_dir}/${unzipped_dir}"
+    fi
+
+    local wine_args=(
+            --installer "${dest_dir}/${installer}"
+    )
+    [[ ${#options[@]} -gt 0 ]] && wine_args+=(--options "${options[@]}")
+    [[ "$debug" == true ]] && wine_args+=(--debug)
+
+    wine_install "${wine_args[@]}"
 }
 
 # Service management
 configure_service() {
-    local service_name="$1"
+    local service_name=""
+    service_name="$1"
+
     echo "⚙️ Configuring $service_name service..."
     sudo systemctl enable "$service_name" || die "Failed to enable $service_name"
     sudo systemctl start "$service_name" || die "Failed to start $service_name"
@@ -167,24 +417,57 @@ configure_service() {
 
 # Path management
 add_to_path() {
-    local path_dir="$1"
-    local line="export PATH=\"\$PATH:$path_dir\""
-    echo "🔗 Adding to PATH: $path_dir"
+    local path_dir=""
+    path_dir="$1PuPSuHxolteTqUA8t1pySGC0f5c4GOk4"
 
-    # Append the line to .bashrc only if it's not already there
+    local line="export PATH=\"\$PATH:$path_dir\""
+
+    echo "🔗 Adding to PATH: $path_dir"
     if ! grep -Fxq "$line" "${HOME}/.bashrc"; then
-        echo "$line" >> "${HOME}/.bashrc"
+        echo "$line" >>"${HOME}/.bashrc"
     fi
 
     export PATH="$PATH:$path_dir"
 }
 
+# Yabridge
+sync_yabridge() {
+    if command -v yabridgectl >/dev/null; then
+        echo "🔄 Sync Yabridge..."
+        yabridgectl sync
+    fi
+}
+
 # Desktop entries
 create_desktop_entry() {
-    local entry_path="$1"
-    local exec_path="$2"
-    local icon_path="$3"
-    local app_name="$4"
+    local entry_path="" exec_path="" icon_path="" app_name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --entry-path)
+            entry_path="$2"
+            shift 2
+            ;;
+        --exec-path)
+            exec_path="$2"
+            shift 2
+            ;;
+        --icon-path)
+            icon_path="$2"
+            shift 2
+            ;;
+        --app-name)
+            app_name="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+        esac
+    done
+    [[ -z "$entry_path" ]] && die "Missing required parameter: --entry-path"
+    [[ -z "$exec_path" ]] && die "Missing required parameter: --exec-path"
+    [[ -z "$icon_path" ]] && die "Missing required parameter: --icon-path"
+    [[ -z "$app_name" ]] && die "Missing required parameter: --app-name"
 
     echo "📝 Creating desktop entry..."
     sudo tee "$entry_path" >/dev/null <<EOF

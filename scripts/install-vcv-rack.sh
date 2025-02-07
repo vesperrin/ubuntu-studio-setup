@@ -1,43 +1,47 @@
 #!/bin/bash
+# VCV Rack Pro Installer
+set -euo pipefail
 
 # Constants
-VCV_RACK_URL="https://vcvrack.com/RackProDownload?version=2.5.2&arch=lin-x64"
+VCV_RACK_TEMPDIR="${TEMPDIR}/vcv_rack"
+VCV_RACK_ZIP="${VCV_RACK_TEMPDIR}/vcv-rack.zip"
+VCV_RACK_UNZIPPED="${VCV_RACK_TEMPDIR}/vcv-rack-unzipped"
+VCV_RACK_URL="https://drive.usercontent.google.com/download?id=18o8kZrUTWBLZN50vIXgLjD70612BYDp3&export=download&authuser=00m"
 VCV_RACK_INSTALL_DIR="/opt/VCVRack"
 VCV_RACK_DESKTOP_ENTRY="/usr/share/applications/vcv-rack.desktop"
 
 install_vcv_rack() {
-    echo "🎹 Installing VCV Rack Pro..."
+    log_install "VCV Rack Pro"
 
-    setup_tempdir
-    configure_audio
+    setup_temp_dir "${VCV_RACK_TEMPDIR}"
+    create_install_dir "${VCV_RACK_INSTALL_DIR}"
 
-    # Install dependencies
     install_dependencies zenity
 
-    # Download VCV Rack
-    local rack_zip="${TEMPDIR}/vcv-rack.zip"
-    safe_download "${VCV_RACK_URL}" "${rack_zip}"
+    safe_download --url "${VCV_RACK_URL}" --dest "${VCV_RACK_ZIP}"
 
-    # Install to system directory
-    echo "📂 Extracting files..."
-    sudo mkdir -p "${VCV_RACK_INSTALL_DIR}"
-    sudo unzip -q "${rack_zip}" -d "${VCV_RACK_INSTALL_DIR}"
+    echo "📦 Installing VCV Rack..."
+    unzip "${VCV_RACK_ZIP}" -d "${VCV_RACK_UNZIPPED}"
+
+    sudo cp -r "${VCV_RACK_UNZIPPED}/Rack2Pro"/* "${VCV_RACK_INSTALL_DIR}/"
     sudo chmod +x "${VCV_RACK_INSTALL_DIR}/Rack"
 
-    create_desktop_entry \
-        "${VCV_RACK_DESKTOP_ENTRY}" \
-        "${VCV_RACK_INSTALL_DIR}/Rack" \
-        "${VCV_RACK_INSTALL_DIR}/Rack.svg" \
-        "VCV Rack Pro"
+    echo "🔌 Installing CLAP plugin..."
+    mkdir -p "${LINUX_CLAP_DIR}"
+    cp "${VCV_RACK_UNZIPPED}/VCV Rack 2.clap" "${LINUX_CLAP_DIR}/"
 
-    # Create symlink for terminal access
+    create_desktop_entry \
+        --entry-path    "${VCV_RACK_DESKTOP_ENTRY}" \
+        --exec-path "${VCV_RACK_INSTALL_DIR}/Rack" \
+        --icon-path "${VCV_RACK_INSTALL_DIR}/Rack.svg" \
+        --app-name "VCV Rack Pro"
+
     echo "🔗 Creating command line access..."
     sudo ln -sf "${VCV_RACK_INSTALL_DIR}/Rack" /usr/local/bin/rack
 
-    # Post-install configuration
     echo "⚙️ Finalizing installation..."
     sudo chown -R root:root "${VCV_RACK_INSTALL_DIR}"
     sudo ldconfig
 
-    echo -e "${GREEN}✅ VCV Rack Pro installation complete!${NC}"
+    log_install_complete "VCV Rack Pro"
 }

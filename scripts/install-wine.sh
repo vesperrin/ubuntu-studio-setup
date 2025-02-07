@@ -39,7 +39,7 @@ setup_winehq_repository() {
 }
 
 install_wine() {
-    echo "🍷 Beginning Wine installation..."
+    log_install "Wine"
 
     # System preparation
     sudo dpkg --add-architecture i386 || die "Failed to enable 32-bit architecture"
@@ -57,6 +57,5 @@ install_wine() {
     # Post-install setup
     configure_wine
 
-    echo -e "\n✅ Wine installation complete!"
-    echo "Version: $(wine --version)"
+    log_install_complete "Wine"
 }

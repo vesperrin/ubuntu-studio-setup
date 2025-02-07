@@ -5,41 +5,26 @@ set -euo pipefail
 
 # Constants
 MANIPULATOR_VERSION=1.4.9
+MANIPULATOR_INSTALLER="InfectedMushroom-Manipulator-V${MANIPULATOR_VERSION}.exe"
 MANIPULATOR_DOWNLOAD_URL="https://polyversemusic.com/downloads/releases/manipulator/InfectedMushroom-Manipulator-V${MANIPULATOR_VERSION}.zip"
 MANIPULATOR_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program Files/Polyverse/Manipulator"
+MANIPULATOR_TEMPDIR="${TEMPDIR}/polyverse-manipulator"
 
 install_polyverse_manipulator() {
-    echo "🎛️  Starting Polyverse Manipulator installation..."
+    log_install "Polyverse Manipulator"
 
-    # Create installation directory
-    echo "📂 Creating installation directory..."
-    mkdir -p "${MANIPULATOR_INSTALL_DIR}"
+    setup_temp_dir "${MANIPULATOR_TEMPDIR}"
+    create_install_dir "${MANIPULATOR_INSTALL_DIR}"
 
-    # Download and extract the package
-    echo "⬇️ Downloading Manipulator..."
-    setup_tempdir
-    safe_download "${MANIPULATOR_DOWNLOAD_URL}" "${TEMP_DIR}/polyverse-manipulator.zip"
+    install_wine_components comctl32 riched20 oleaut32
 
-    echo "📦 Extracting package..."
-    unzip -q "${TEMP_DIR}/polyverse-manipulator.zip" -d "${TEMPDIR}"
+    wine_download_and_install \
+        --source "${MANIPULATOR_DOWNLOAD_URL}" \
+        --dest "${MANIPULATOR_TEMPDIR}/polyverse-manipulator.zip" \
+        --installer "${MANIPULATOR_INSTALLER}" \
+        --options "/SILENT"
 
-    # Install the plugin
-    echo "🔨 Installing Manipulator..."
-    wine "${TEMPDIR}/InfectedMushroom-Manipulator-V${MANIPULATOR_VERSION}.exe" /S
+    sync_yabridge
 
-    # Move to VST plugins directory
-    echo "🚚 Moving plugin files..."
-    mkdir -p "${VST3_DIR}"
-    mv "${MANIPULATOR_INSTALL_DIR}"/*.dll "${VST3_DIR}/"
-
-    # Configure yabridge if installed
-    if command -v yabridgectl >/dev/null; then
-        echo "🔗 Configuring yabridge..."
-        yabridgectl add "${VST3_DIR}"
-        yabridgectl sync
-    fi
-
-    echo "✅ Installation complete!"
-    echo -e "\nManipulator installed to: ${VST3_DIR}"
-    echo "Launch your DAW and scan for new plugins"
+    log_install_complete "Polyverse Manipulator"
 }

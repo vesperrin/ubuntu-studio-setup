@@ -15,18 +15,16 @@ EOF
 }
 
 install_studio_one() {
-    echo "🎹 Installing Studio One Pro 7..."
+    log_install "Studio One"
 
-    setup_tempdir
     configure_studio_one_audio
 
     # Set non-interactive frontend for apt
     export DEBIAN_FRONTEND=noninteractive
 
-    # Download and install Studio One
     local temp_deb="${TEMPDIR}/studio-one.deb"
-    safe_download "${STUDIO_ONE_DEB_URL}" "${temp_deb}"
+    safe_download --url "${STUDIO_ONE_DEB_URL}" --dest "${temp_deb}"
     install_deb "${temp_deb}"
 
-    echo -e "${GREEN}✅ Studio One Pro 7 installation complete!${NC}"
+    log_install_complete "Studio One"
 }

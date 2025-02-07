@@ -4,10 +4,12 @@ SYNCTHING_KEY_URL="https://syncthing.net/release-key.gpg"
 SYNCTHING_REPO_COMPONENTS="https://apt.syncthing.net/ syncthing stable"
 
 install_syncthing() {
+    log_install "Syncthing"
+
     add_apt_repository \
-        "${SYNCTHING_KEY_URL}" \
-        "${SYNCTHING_REPO_COMPONENTS}" \
-        "syncthing"
+        --key-url "${SYNCTHING_KEY_URL}" \
+        --repo-components "${SYNCTHING_REPO_COMPONENTS}" \
+        --service-name "syncthing"
 
     # Install and configure
     install_dependencies syncthing
@@ -20,5 +22,5 @@ install_syncthing() {
         sudo ufw reload
     fi
 
-    echo -e "${GREEN}✅ Syncthing installation complete!${NC}"
+    log_install_complete "Syncthing"
 }
