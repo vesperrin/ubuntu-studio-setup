@@ -7,7 +7,7 @@ set -euo pipefail
 SOUNDS_ONLINE_VERSION="1.5.0"
 SOUNDS_ONLINE_INSTALLER="EW Installation Center-${SOUNDS_ONLINE_VERSION}.exe"
 SOUNDS_ONLINE_DOWNLOAD_URL="https://software.soundsonline.com/Products/IC/IC_${SOUNDS_ONLINE_VERSION}_Win.zip"
-SOUNDS_ONLINE_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program Files/Sounds Online"
+SOUNDS_ONLINE_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Sounds\ Online\Installation\ Center"
 SOUNDS_ONLINE_TEMPDIR="${TEMPDIR}/sounds-online"
 
 install_sounds_online_installation_center() {

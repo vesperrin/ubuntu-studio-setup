@@ -7,7 +7,7 @@ set -euo pipefail
 ACUSTICA_VERSION="2.6.051"
 ACUSTICA_INSTALLER="Setup Aquarius ${ACUSTICA_VERSION} Win.exe"
 ACUSTICA_DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=11QRhT9e9Mc_fmTkIlo_F7amtthYF7FJ8&export=download&authuser=0"
-ACUSTICA_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program Files/Acustica Audio"
+ACUSTICA_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Acustica\ Audio"
 ACUSTICA_TEMPDIR="${TEMPDIR}/acustica-audio"
 
 install_acustica_audio_aquarius() {

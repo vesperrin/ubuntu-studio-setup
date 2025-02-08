@@ -3,14 +3,21 @@
 
 set -euo pipefail
 
+# String Utils
+extract_version() {
+    [[ "$1" =~ (v?[0-9]+(\.[0-9]+)*(-[a-zA-Z0-9.]+)?) ]] || return 1
+    local version="${BASH_REMATCH[0]#v}"
+    echo "$version"
+}
+
 # Colors and formatting
-export NC='\033[0m' RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[0;33m'
+export NC='\033[0m' RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[0;33m' BLUE='\033[00;34m' PURPLE='\033[00;35m' CYAN='\033[00;36m'
 
 log_install() {
     local app_name=""
     app_name="$1"
 
-    echo "🎛 Installing ${app_name}..."
+    echo -e "${CYAN}🎛 Installing ${app_name}...${NC}"
 }
 
 log_install_complete() {
@@ -66,7 +73,7 @@ get_github_latest_release() {
 }
 
 download_github_package() {
-    local org="" repo="" version="" prefix="" suffix=""
+    local org="" repo="" release_name="" prefix="" suffix=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
         --org)
@@ -77,8 +84,8 @@ download_github_package() {
             repo="$2"
             shift 2
             ;;
-        --version)
-            version="$2"
+        --release)
+            release_name="$2"
             shift 2
             ;;
         --prefix)
@@ -96,12 +103,15 @@ download_github_package() {
     done
     [[ -z "$org" ]] && die "Missing required parameter: --org"
     [[ -z "$repo" ]] && die "Missing required parameter: --repo"
-    [[ -z "$version" ]] && die "Missing required parameter: --version"
+    [[ -z "$release_name" ]] && die "Missing required parameter: --release_name"
     [[ -z "$prefix" ]] && die "Missing required parameter: --prefix"
     [[ -z "$suffix" ]] && die "Missing required parameter: --suffix"
 
-    local destination="${TEMPDIR}/${prefix}${version}${suffix}"
-    local source="https://github.com/${org}/${repo}/releases/download/${version}/${prefix}${version}${suffix}"
+    local version
+    version="$(extract_version "$release_name")"
+
+    local destination="${TEMPDIR}/${prefix}${release_name}${suffix}"
+    local source="https://github.com/${org}/${repo}/releases/download/${release_name}/${prefix}${version}${suffix}"
 
     safe_download --url "${source}" --dest "${destination}"
 
@@ -138,12 +148,12 @@ download_github_latest_package() {
     [[ -z "$prefix" ]] && die "Missing required parameter: --prefix"
     [[ -z "$suffix" ]] && die "Missing required parameter: --suffix"
 
-    local version
-    version="$(get_github_latest_release --org "${org}" --repo "${repo}")"
+    local release_name
+    release_name="$(get_github_latest_release --org "${org}" --repo "${repo}")"
     download_github_package \
         --org "${org}" \
         --repo "${repo}" \
-        --version "${version}" \
+        --release "${release_name}" \
         --prefix "${prefix}" \
         --suffix "${suffix}"
 }
@@ -302,7 +312,7 @@ configure_wine() {
 }
 
 install_wine_components() {
-    local components=("$@")
+    local components=("$@")     
     [[ ${#components[@]} -eq 0 ]] && die "No components specified"
 
     echo "🔧 Installing Wine components: ${components[*]}..."

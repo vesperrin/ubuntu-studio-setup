@@ -7,7 +7,7 @@ set -euo pipefail
 MANIPULATOR_VERSION=1.4.9
 MANIPULATOR_INSTALLER="InfectedMushroom-Manipulator-V${MANIPULATOR_VERSION}.exe"
 MANIPULATOR_DOWNLOAD_URL="https://polyversemusic.com/downloads/releases/manipulator/InfectedMushroom-Manipulator-V${MANIPULATOR_VERSION}.zip"
-MANIPULATOR_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program Files/Polyverse/Manipulator"
+MANIPULATOR_INSTALL_DIR="${WINE_PREFIX}/drive_c/Program\ Files/Polyverse/Manipulator"
 MANIPULATOR_TEMPDIR="${TEMPDIR}/polyverse-manipulator"
 
 install_polyverse_manipulator() {

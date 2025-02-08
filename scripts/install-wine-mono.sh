@@ -11,13 +11,8 @@ install_mono() {
     local msi_file="$1"
     echo "🔨 Installing ${msi_file##*/}..."
 
-    # Check Wine version compatibility first
-    if ! wine --version | grep -q "wine-7"; then
-        die "Wine version too old - requires at least Wine 7.x"
-    fi
-
-    install_wine_components msi || die "Failed to install MSI support"
-    wine msiexec /i "${msi_file}" /qn || die "Installation failed"
+    wineboot -u
+    wine start "${msi_file}"
 
     echo -e "${GREEN}✅ Wine Mono installed to ${WINE_MONO_INSTALL_DIR}${NC}"
 }
